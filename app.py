@@ -1,11 +1,13 @@
 """ Flask App for Notes App"""
 
-from forms import RegisterForm
-from flask import Flask, render_template, redirect
+from forms import RegisterForm, LoginForm
+from flask import Flask, render_template, redirect, session
 from flask_debugtoolbar import DebugToolbarExtension
 from models import db, connect_db, User
 
+
 app = Flask(__name__)
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql:///notes"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -46,11 +48,10 @@ def handle_register_form():
         first_name = form.first_name.data
         last_name = form.last_name.data
 
-        user = User(username=username,
-                    password=password,
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name)
+        user = User.register(
+            username, password, email, first_name, last_name)
+
+        session["user_id"] = user.username
 
         db.session.add(user)
         db.session.commit()
@@ -58,3 +59,34 @@ def handle_register_form():
         return redirect('/secret')
     else:
         return render_template('register_form.html', form=form)
+
+
+@app.get('/login')
+def show_login_form():
+    """This renders the login_form.html template"""
+
+    form = LoginForm()
+
+    return render_template('login_form.html', form=form)
+
+
+@app.post('/login')
+def handle_login_form():
+    """This handles the login form submission"""
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+
+        username = form.username.data
+        password = form.password.data
+
+        user = User.authenticate(username, password)
+
+        if user:
+            session["user_id"] = username
+            return redirect('/secret', user=user)
+        else:
+            form.username.errors = ["Bad name/password"]
+
+    return render_template("login_form.html", form=form)
