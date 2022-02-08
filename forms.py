@@ -16,6 +16,7 @@ class RegisterForm(FlaskForm):
     last_name = StringField("Last name", validators=[
                             InputRequired(), Length(max=30)])
 
+
 class LoginForm(FlaskForm):
     """Form for logging a User into the site."""
 

@@ -12,6 +12,8 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql:///notes"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
+app.config["SECRET_KEY"] = "some$tring"
+app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
 
 connect_db(app)
 db.create_all()
@@ -56,7 +58,7 @@ def handle_register_form():
         db.session.add(user)
         db.session.commit()
 
-        return redirect('/secret')
+        return redirect(f'/users/{username}')
     else:
         return render_template('register_form.html', form=form)
 
@@ -102,3 +104,10 @@ def user_detailed_page(username):
         return render_template('secret.html', user=user)
     else:
         return redirect('/login')
+
+
+@app.post('/logout')
+def logout_user():
+    """This route removes the logged in user's id from session"""
+    session['user_id'] = None
+    return redirect('/')
