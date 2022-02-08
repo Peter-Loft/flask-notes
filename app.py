@@ -85,8 +85,20 @@ def handle_login_form():
 
         if user:
             session["user_id"] = username
-            return redirect('/secret', user=user)
+            return redirect(f'/users/{username}')
         else:
             form.username.errors = ["Bad name/password"]
 
     return render_template("login_form.html", form=form)
+
+
+@app.get('/users/<username>')
+def user_detailed_page(username):
+    """this display user detailed page"""
+
+    # check session to make sure current user is authenticated
+    if session['user_id'] == username:
+        user = User.query.filter_by(username=username).one_or_none()
+        return render_template('secret.html', user=user)
+    else:
+        return redirect('/login')
