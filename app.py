@@ -3,7 +3,7 @@
 from flask import Flask, render_template, redirect, session
 from flask_debugtoolbar import DebugToolbarExtension
 
-from models import db, connect_db, User
+from models import db, connect_db, User, Note
 from forms import RegisterForm, LoginForm, CSRFOnly
 
 app = Flask(__name__)
@@ -93,6 +93,17 @@ def user_detailed_page(username):
         user = User.query.filter_by(username=username).one_or_none()
         return render_template('secret.html', user=user, form=form)
 
+@app.post('/users/<username>/delete')
+def delete_user(username):
+    """this delete user and notes from db, redirect back to /"""
+
+    form = CSRFOnly()
+    if form.validate_on_submit():
+        Note.query.filter_by(owner=username).delete()
+        User.query.filter_by(username=username).delete()
+        db.session.commit()
+        session.pop(SESSION_KEY)
+        return redirect('/')
 
 @app.post('/logout')
 def logout_user():
@@ -103,5 +114,3 @@ def logout_user():
     if form.validate_on_submit():
         session.pop(SESSION_KEY)
         return redirect('/')
-
-
