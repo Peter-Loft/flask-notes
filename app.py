@@ -103,3 +103,5 @@ def logout_user():
     if form.validate_on_submit():
         session.pop(SESSION_KEY)
         return redirect('/')
+
+
