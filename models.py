@@ -13,9 +13,25 @@ def connect_db(app):
     db.app = app
     db.init_app(app)
 
+class Note(db.Model):
+    """Note."""
+
+    __tablename__ = "note"
+
+    id = db.Column(db.Integer,
+                         primary_key=True,
+                         autoincrement=True)
+    title = db.Column(db.String(100),
+                         nullable=False)
+    content = db.Column(db.Text,
+                      nullable=False)
+    owner = db.Column(db.String,
+                        db.ForeignKey('users.username'))
+
 
 class User(db.Model):
-
+    """User."""
+    
     __tablename__ = "users"
 
     username = db.Column(db.String(20),
