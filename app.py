@@ -1,10 +1,11 @@
 """ Flask App for Notes App"""
 
-from forms import RegisterForm, LoginForm
+
 from flask import Flask, render_template, redirect, session
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User
 
+from models import db, connect_db, User
+from forms import RegisterForm, LoginForm, CSRFOnly
 
 app = Flask(__name__)
 
@@ -26,6 +27,8 @@ def homepage():
     """this redirect to register page"""
 
     return redirect('/register')
+
+# CR: consider combining GET/POST for same routes
 
 
 @app.get('/register')
@@ -53,7 +56,7 @@ def handle_register_form():
         user = User.register(
             username, password, email, first_name, last_name)
 
-        session["user_id"] = user.username
+        session["user_id"] = username
 
         db.session.add(user)
         db.session.commit()
@@ -61,6 +64,9 @@ def handle_register_form():
         return redirect(f'/users/{username}')
     else:
         return render_template('register_form.html', form=form)
+
+# CR: Check to see if user already logged in or not and redirect or display
+# based on that.
 
 
 @app.get('/login')
@@ -86,6 +92,7 @@ def handle_login_form():
         user = User.authenticate(username, password)
 
         if user:
+            # CR: set "user_id" string to a global variable to be safer
             session["user_id"] = username
             return redirect(f'/users/{username}')
         else:
@@ -99,9 +106,13 @@ def user_detailed_page(username):
     """this display user detailed page"""
 
     # check session to make sure current user is authenticated
+    form = CSRFOnly()
+
+    # CR: Refactor for 'failfast' framing
     if session['user_id'] == username:
         user = User.query.filter_by(username=username).one_or_none()
-        return render_template('secret.html', user=user)
+
+        return render_template('secret.html', user=user, form=form)
     else:
         return redirect('/login')
 
@@ -109,5 +120,10 @@ def user_detailed_page(username):
 @app.post('/logout')
 def logout_user():
     """This route removes the logged in user's id from session"""
-    session['user_id'] = None
-    return redirect('/')
+    form = CSRFOnly()
+
+    if form.validate_on_submit():
+        session.pop('user_id')
+        return redirect('/')
+    else:
+        return redirect('/secret')
